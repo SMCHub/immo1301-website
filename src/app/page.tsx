@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-function SalesBanner() {
+function SalesBanner({ onClose }: { onClose: () => void }) {
   const [visible, setVisible] = useState(true);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -27,9 +27,9 @@ function SalesBanner() {
 
   return (
     <>
-      {/* Banner */}
+      {/* Banner – fixed above navbar, pushes nav down via bannerVisible prop */}
       <div
-        className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center px-4 py-3 shadow-lg"
+        className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-center px-4 py-3 shadow-lg"
         style={{
           background: "linear-gradient(135deg, #e8b830, #f5d020, #e8b830)",
           animation: "bannerPulse 3s ease-in-out infinite",
@@ -52,7 +52,7 @@ function SalesBanner() {
           </button>
         </div>
         <button
-          onClick={() => setVisible(false)}
+          onClick={() => { setVisible(false); onClose(); }}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1a1a1a] text-xl opacity-60 hover:opacity-100 transition-opacity"
           aria-label="Banner schliessen"
         >
@@ -94,7 +94,7 @@ function SalesBanner() {
   );
 }
 
-function NavBar() {
+function NavBar({ bannerVisible }: { bannerVisible: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -113,11 +113,12 @@ function NavBar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
           ? "bg-white/95 backdrop-blur-md shadow-lg"
           : "bg-transparent"
       }`}
+      style={{ top: bannerVisible ? "48px" : "0" }}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
@@ -721,10 +722,12 @@ function Footer() {
 }
 
 export default function Home() {
+  const [bannerVisible, setBannerVisible] = useState(true);
+
   return (
     <main>
-      <SalesBanner />
-      <NavBar />
+      <SalesBanner onClose={() => setBannerVisible(false)} />
+      <NavBar bannerVisible={bannerVisible} />
       <HeroSection />
       <AboutSection />
       <ServicesSection />
