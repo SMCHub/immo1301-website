@@ -4,21 +4,33 @@ import { useState, useEffect } from "react";
 
 function SalesBanner({ onClose }: { onClose: () => void }) {
   const [visible, setVisible] = useState(true);
-  const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+  const [error, setError] = useState("");
 
-  async function handleInquiry() {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
     setSending(true);
     try {
-      const res = await fetch("/api/send", { method: "POST" });
+      const res = await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       if (res.ok) {
         setSent(true);
-        setShowPopup(true);
+        setShowForm(false);
+        setShowSuccess(true);
       } else {
+        setError("Fehler beim Senden. Bitte versuchen Sie es erneut.");
         setSending(false);
       }
     } catch {
+      setError("Fehler beim Senden. Bitte versuchen Sie es erneut.");
       setSending(false);
     }
   }
@@ -27,7 +39,7 @@ function SalesBanner({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      {/* Banner – fixed above navbar, pushes nav down via bannerVisible prop */}
+      {/* Banner */}
       <div
         className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-center px-4 py-3 shadow-lg"
         style={{
@@ -40,15 +52,11 @@ function SalesBanner({ onClose }: { onClose: () => void }) {
             Gefällt Ihnen diese Webseite? Sie können sie jetzt erwerben!
           </span>
           <button
-            onClick={handleInquiry}
-            disabled={sending || sent}
+            onClick={() => setShowForm(true)}
+            disabled={sent}
             className="bg-[#1a1a1a] text-[#f5d020] font-bold text-xs md:text-sm uppercase tracking-wider px-4 md:px-6 py-2 rounded-md hover:bg-black hover:scale-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none whitespace-nowrap"
           >
-            {sent
-              ? "Anfrage gesendet"
-              : sending
-                ? "Wird gesendet..."
-                : "Jetzt Anfrage senden"}
+            {sent ? "Anfrage gesendet" : "Jetzt Anfrage senden"}
           </button>
         </div>
         <button
@@ -60,12 +68,90 @@ function SalesBanner({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      {/* Popup */}
-      {showPopup && (
+      {/* Contact Form Popup */}
+      {showForm && (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowPopup(false);
+            if (e.target === e.currentTarget) setShowForm(false);
+          }}
+        >
+          <div
+            className="bg-[#1a1a1a] border border-gray-700 rounded-2xl p-8 md:p-10 max-w-md w-[90%]"
+            style={{ animation: "popupIn 0.3s ease" }}
+          >
+            <h3 className="text-xl font-bold text-white mb-1 text-center">
+              Webseite erwerben
+            </h3>
+            <p className="text-gray-400 text-sm mb-6 text-center">
+              Hinterlassen Sie Ihre Kontaktdaten und wir melden uns bei Ihnen.
+            </p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-lg bg-[#2a2a2a] border border-gray-600 text-white placeholder-gray-500 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all outline-none"
+                  placeholder="Max Muster"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  E-Mail *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-4 py-3 rounded-lg bg-[#2a2a2a] border border-gray-600 text-white placeholder-gray-500 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all outline-none"
+                  placeholder="max@beispiel.ch"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Telefon
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-4 py-3 rounded-lg bg-[#2a2a2a] border border-gray-600 text-white placeholder-gray-500 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all outline-none"
+                  placeholder="+41 79 123 45 67"
+                />
+              </div>
+              {error && (
+                <p className="text-red-400 text-sm text-center">{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={sending}
+                className="w-full bg-gradient-to-r from-accent to-accent-light text-[#0a0a0a] font-semibold py-3 rounded-lg text-base hover:-translate-y-0.5 hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {sending ? "Wird gesendet..." : "Anfrage senden"}
+              </button>
+            </form>
+            <button
+              onClick={() => setShowForm(false)}
+              className="mt-4 w-full text-center text-gray-500 text-sm hover:text-gray-300 transition-colors"
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Success Popup */}
+      {showSuccess && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowSuccess(false);
           }}
         >
           <div
@@ -82,7 +168,7 @@ function SalesBanner({ onClose }: { onClose: () => void }) {
               Vielen Dank für Ihr Interesse. Wir melden uns in Kürze bei Ihnen.
             </p>
             <button
-              onClick={() => setShowPopup(false)}
+              onClick={() => setShowSuccess(false)}
               className="bg-gradient-to-r from-accent to-accent-light text-[#0a0a0a] font-semibold px-8 py-3 rounded-lg hover:-translate-y-0.5 hover:shadow-lg transition-all"
             >
               OK
