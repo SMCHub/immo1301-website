@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-function SalesBanner({ onClose }: { onClose: () => void }) {
+function SalesBanner({ onClose, onHeightChange }: { onClose: () => void; onHeightChange: (h: number) => void }) {
   const [visible, setVisible] = useState(true);
   const [sent, setSent] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -10,6 +10,19 @@ function SalesBanner({ onClose }: { onClose: () => void }) {
   const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [error, setError] = useState("");
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  const measureHeight = useCallback(() => {
+    if (bannerRef.current && visible) {
+      onHeightChange(bannerRef.current.offsetHeight);
+    }
+  }, [visible, onHeightChange]);
+
+  useEffect(() => {
+    measureHeight();
+    window.addEventListener("resize", measureHeight);
+    return () => window.removeEventListener("resize", measureHeight);
+  }, [measureHeight]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,6 +54,7 @@ function SalesBanner({ onClose }: { onClose: () => void }) {
     <>
       {/* Banner */}
       <div
+        ref={bannerRef}
         className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-center px-4 py-3 shadow-lg"
         style={{
           background: "linear-gradient(135deg, #e8b830, #f5d020, #e8b830)",
@@ -60,7 +74,7 @@ function SalesBanner({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <button
-          onClick={() => { setVisible(false); onClose(); }}
+          onClick={() => { setVisible(false); onClose(); onHeightChange(0); }}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1a1a1a] text-xl opacity-60 hover:opacity-100 transition-opacity"
           aria-label="Banner schliessen"
         >
@@ -180,7 +194,7 @@ function SalesBanner({ onClose }: { onClose: () => void }) {
   );
 }
 
-function NavBar({ bannerVisible }: { bannerVisible: boolean }) {
+function NavBar({ bannerHeight }: { bannerHeight: number }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -204,7 +218,7 @@ function NavBar({ bannerVisible }: { bannerVisible: boolean }) {
           ? "bg-white/95 backdrop-blur-md shadow-lg"
           : "bg-transparent"
       }`}
-      style={{ top: bannerVisible ? "48px" : "0" }}
+      style={{ top: `${bannerHeight}px` }}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
@@ -808,12 +822,12 @@ function Footer() {
 }
 
 export default function Home() {
-  const [bannerVisible, setBannerVisible] = useState(true);
+  const [bannerHeight, setBannerHeight] = useState(0);
 
   return (
     <main>
-      <SalesBanner onClose={() => setBannerVisible(false)} />
-      <NavBar bannerVisible={bannerVisible} />
+      <SalesBanner onClose={() => setBannerHeight(0)} onHeightChange={setBannerHeight} />
+      <NavBar bannerHeight={bannerHeight} />
       <HeroSection />
       <AboutSection />
       <ServicesSection />
